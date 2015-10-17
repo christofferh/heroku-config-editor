@@ -1,3 +1,5 @@
+'use strict';
+
 module.exports = function(grunt) {
 
   grunt.initConfig({
@@ -6,9 +8,15 @@ module.exports = function(grunt) {
       options: {
         esnext: true,
         reporter: require('jshint-stylish'),
+        globalstrict: true,
         globals: {
+          process: true,
+          exports: true,
+          module: true,
           require: false,
-          node: true
+          node: true,
+          tempFile: true,
+          formatConfig: true
         }
       }
     },

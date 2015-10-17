@@ -1,6 +1,7 @@
 'use strict';
 
 let cli = require('heroku-cli-util');
+let co  = require('co');
 let os = require('os');
 let fs = require('fs');
 let spawn = require('child_process').spawn;
@@ -54,6 +55,7 @@ let formatConfig = (config) => {
 };
 
 let tempFile = () => {
+  // TODO: Create temp file in current folder & clean-up.
   return new Promise(
     (resolve, reject) => {
       tmp.file((err, path, fd, cleanupCallback) => {
@@ -66,8 +68,8 @@ let tempFile = () => {
 let openEditor = (filename) => {
   // NOTE: This will break for whitespaced paths
   let editorWithArgs = process.env.EDITOR.split(/ (.+)?/);
-  let editorPath = editorWithArgs[0]
-  let editorArgs = editorWithArgs.slice(1)
+  let editorPath = editorWithArgs[0];
+  let editorArgs = editorWithArgs.slice(1);
 
   return new Promise(
     (resolve, reject) => {
@@ -84,17 +86,31 @@ let openEditor = (filename) => {
   );
 };
 
-let updateConfig = (oldConfig, updatedConfig) => {
+let diffAndUpdate = (oldConfig, newConfig) => {
   return new Promise(
     (resolve, reject) => {
-      let deletedKeys = deletedConfigs(oldConfig, updatedConfig);
+      let deletedKeys = deletedConfigs(oldConfig, newConfig);
 
       deletedKeys.forEach((key) => {
-        updatedConfig[key] = null;
+        newConfig[key] = null;
       });
-      resolve(updatedConfig);
+      resolve(newConfig);
     }
   );
+};
+
+let runEditor = function* (context, heroku) {
+  if (process.env.EDITOR === undefined) {
+    yield Promise.reject("Environment variable 'EDITOR' not set.");
+  }
+
+  let config = yield heroku.apps(context.app).configVars().info();
+  let configFile = yield writeConfig(config);
+  yield openEditor(configFile);
+  let newConfig = yield readConfig(configFile);
+  let updatedConfig = yield diffAndUpdate(config, newConfig);
+
+  return yield heroku.apps(context.app).configVars().update(updatedConfig);
 };
 
 module.exports = {
@@ -103,23 +119,5 @@ module.exports = {
   description: 'opens an editor for updating an app\'s config vars',
   needsApp: true,
   needsAuth: true,
-  run: cli.command((context, heroku) => {
-    if (process.env.EDITOR === undefined) { cli.error("Environment variable 'EDITOR' not set."); return; }
-    return heroku.apps(context.app).configVars().info()
-    .then((config) => {
-      writeConfig(config)
-        .then(openEditor)
-        .then(readConfig)
-        .then((updatedConfig) => {
-          return updateConfig(config, updatedConfig);
-        })
-        .then((data) => {
-          //cli.debug(data)
-          return heroku.apps(context.app).configVars().update(data);
-        })
-        .catch((error) => {
-          cli.error(error)
-        });
-    });
-  })
+  run: cli.command(co.wrap(runEditor))
 };

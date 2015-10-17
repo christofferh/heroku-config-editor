@@ -14,6 +14,7 @@
   ],
   "license": "MIT",
   "dependencies": {
+    "co": "^4.6.0",
     "heroku-cli-util": "^5.4.10"
   },
   "devDependencies": {
