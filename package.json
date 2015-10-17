@@ -1,6 +1,6 @@
 {
   "name": "heroku-config-editor",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Heroku Toolbelt plugin to update configs in editor",
   "main": "index.js",
   "author": "Christoffer Hamberg",
@@ -15,13 +15,13 @@
   "license": "MIT",
   "dependencies": {
     "co": "^4.6.0",
-    "heroku-cli-util": "^5.4.10"
+    "heroku-cli-util": "^5.4.10",
+    "tmp": "0.0.28"
   },
   "devDependencies": {
     "grunt": "^0.4.5",
     "grunt-contrib-jshint": "^0.11.3",
     "grunt-contrib-watch": "^0.6.1",
-    "jshint-stylish": "^2.0.1",
-    "tmp": "0.0.28"
+    "jshint-stylish": "^2.0.1"
   }
 }
